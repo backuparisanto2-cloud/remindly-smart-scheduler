@@ -1,7 +1,9 @@
-import { Link, useRouterState } from "@tanstack/react-router";
-import { CalendarClock, History, Mail, Server } from "lucide-react";
-import type { ReactNode } from "react";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { CalendarClock, History, LogOut, Mail, Server } from "lucide-react";
+import { useEffect, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { signOut, useSession } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
 
 const NAV = [
   { to: "/", label: "Dasbor", icon: CalendarClock },
@@ -11,6 +13,21 @@ const NAV = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
+  const { session, ready } = useSession();
+
+  useEffect(() => {
+    if (ready && !session) void navigate({ to: "/auth" });
+  }, [ready, session, navigate]);
+
+  if (!ready || !session) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
+        Memuat…
+      </div>
+    );
+  }
+
 
   return (
     <div className="min-h-screen">
