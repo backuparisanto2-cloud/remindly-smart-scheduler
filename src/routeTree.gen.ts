@@ -15,6 +15,7 @@ import { Route as SmtpRouteImport } from './routes/smtp'
 import { Route as RemindersIdRouteImport } from './routes/reminders/$id'
 import { Route as RemindersNewRouteImport } from './routes/reminders/new'
 import { Route as ApiPublicCronDispatchRouteImport } from './routes/api/public/cron/dispatch'
+import { Route as ApiPublicMailSendRouteImport } from './routes/api/public/mail/send'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -46,6 +47,11 @@ const ApiPublicCronDispatchRoute = ApiPublicCronDispatchRouteImport.update({
   path: '/api/public/cron/dispatch',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicMailSendRoute = ApiPublicMailSendRouteImport.update({
+  id: '/api/public/mail/send',
+  path: '/api/public/mail/send',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -54,6 +60,7 @@ export interface FileRoutesByFullPath {
   '/reminders/$id': typeof RemindersIdRoute
   '/reminders/new': typeof RemindersNewRoute
   '/api/public/cron/dispatch': typeof ApiPublicCronDispatchRoute
+  '/api/public/mail/send': typeof ApiPublicMailSendRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +69,7 @@ export interface FileRoutesByTo {
   '/reminders/$id': typeof RemindersIdRoute
   '/reminders/new': typeof RemindersNewRoute
   '/api/public/cron/dispatch': typeof ApiPublicCronDispatchRoute
+  '/api/public/mail/send': typeof ApiPublicMailSendRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,6 +79,7 @@ export interface FileRoutesById {
   '/reminders/$id': typeof RemindersIdRoute
   '/reminders/new': typeof RemindersNewRoute
   '/api/public/cron/dispatch': typeof ApiPublicCronDispatchRoute
+  '/api/public/mail/send': typeof ApiPublicMailSendRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,6 +90,7 @@ export interface FileRouteTypes {
     | '/reminders/$id'
     | '/reminders/new'
     | '/api/public/cron/dispatch'
+    | '/api/public/mail/send'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -89,6 +99,7 @@ export interface FileRouteTypes {
     | '/reminders/$id'
     | '/reminders/new'
     | '/api/public/cron/dispatch'
+    | '/api/public/mail/send'
   id:
     | '__root__'
     | '/'
@@ -97,6 +108,7 @@ export interface FileRouteTypes {
     | '/reminders/$id'
     | '/reminders/new'
     | '/api/public/cron/dispatch'
+    | '/api/public/mail/send'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -106,6 +118,7 @@ export interface RootRouteChildren {
   RemindersIdRoute: typeof RemindersIdRoute
   RemindersNewRoute: typeof RemindersNewRoute
   ApiPublicCronDispatchRoute: typeof ApiPublicCronDispatchRoute
+  ApiPublicMailSendRoute: typeof ApiPublicMailSendRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -152,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronDispatchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/mail/send': {
+      id: '/api/public/mail/send'
+      path: '/api/public/mail/send'
+      fullPath: '/api/public/mail/send'
+      preLoaderRoute: typeof ApiPublicMailSendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -162,6 +182,7 @@ const rootRouteChildren: RootRouteChildren = {
   RemindersIdRoute: RemindersIdRoute,
   RemindersNewRoute: RemindersNewRoute,
   ApiPublicCronDispatchRoute: ApiPublicCronDispatchRoute,
+  ApiPublicMailSendRoute: ApiPublicMailSendRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
