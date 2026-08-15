@@ -8,9 +8,9 @@ export type SmtpInput = {
   port: number;
   tls: boolean;
   from_email: string;
-  from_name?: string | null;
+  from_name?: string | null | undefined;
   username: string;
-  password?: string | null;
+  password?: string | null | undefined;
   verify_cert: boolean;
 };
 
