@@ -10,33 +10,43 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as RemindersNewRouteImport } from './routes/reminders/new'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RemindersNewRoute = RemindersNewRouteImport.update({
+  id: '/reminders/new',
+  path: '/reminders/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/reminders/new': typeof RemindersNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/reminders/new': typeof RemindersNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/reminders/new': typeof RemindersNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/reminders/new'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/reminders/new'
+  id: '__root__' | '/' | '/reminders/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  RemindersNewRoute: typeof RemindersNewRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +58,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reminders/new': {
+      id: '/reminders/new'
+      path: '/reminders/new'
+      fullPath: '/reminders/new'
+      preLoaderRoute: typeof RemindersNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  RemindersNewRoute: RemindersNewRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
