@@ -48,12 +48,12 @@ function LogsPage() {
                 <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
               )}
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium">{l.subject ?? "(tanpa subjek)"}</p>
+                <p className="truncate text-sm font-medium">{l.reminder_title ?? "(tanpa judul)"}</p>
                 <p className="truncate text-xs text-muted-foreground">
-                  {(l.recipients ?? []).join(", ")} · {formatDateTime(l.sent_at)} · {l.trigger_source}
+                  {l.recipients ?? "—"} · {formatDateTime(l.sent_at)} · {l.trigger_source}
                 </p>
-                {l.error_message ? (
-                  <p className="mt-1 text-xs break-words text-destructive">{l.error_message}</p>
+                {l.error ? (
+                  <p className="mt-1 text-xs break-words text-destructive">{l.error}</p>
                 ) : null}
               </div>
             </CardContent>
