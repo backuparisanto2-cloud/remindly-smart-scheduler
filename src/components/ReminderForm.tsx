@@ -410,9 +410,33 @@ export function ReminderForm({ initial }: { initial: ReminderFormValues }) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="tz">Zona waktu</Label>
-              <Input id="tz" value={form.timezone} onChange={(e) => set("timezone", e.target.value)} />
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="tz">Zona waktu</Label>
+                <button
+                  type="button"
+                  className="text-xs font-medium text-primary hover:underline"
+                  onClick={() => set("timezone", deviceTimezone())}
+                >
+                  Pakai zona perangkat
+                </button>
+              </div>
+              <Select value={form.timezone} onValueChange={(v) => set("timezone", v)}>
+                <SelectTrigger id="tz">
+                  <SelectValue placeholder="Pilih zona waktu" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tzOptions.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Jam kirim di jadwal mengikuti waktu lokal {timezoneLabel(form.timezone)}.
+              </p>
             </div>
+
 
             <Separator />
 
