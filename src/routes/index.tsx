@@ -189,14 +189,25 @@ function Dashboard() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <Switch
-                  checked={r.enabled}
-                  onCheckedChange={async (checked) => {
-                    await toggle({ data: { id: r.id, enabled: checked } });
-                    refresh();
+                <Button
+                  size="sm"
+                  variant={r.enabled ? "outline" : "default"}
+                  className="rounded-full"
+                  disabled={toggleMutation.isPending && togglingId === r.id}
+                  onClick={() => {
+                    setTogglingId(r.id);
+                    toggleMutation.mutate({ id: r.id, enabled: !r.enabled, title: r.title });
                   }}
-                  aria-label="Aktifkan reminder"
-                />
+                >
+                  {toggleMutation.isPending && togglingId === r.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : r.enabled ? (
+                    <Pause className="h-4 w-4" />
+                  ) : (
+                    <Play className="h-4 w-4" />
+                  )}
+                  {r.enabled ? "Jeda" : "Lanjutkan"}
+                </Button>
                 <Button
                   size="sm"
                   variant="secondary"
@@ -211,21 +222,38 @@ function Dashboard() {
                     <Pencil className="h-4 w-4" /> Edit
                   </Link>
                 </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="rounded-full text-destructive hover:text-destructive"
-                  onClick={async () => {
-                    if (!confirm(`Hapus reminder "${r.title}"?`)) return;
-                    await destroy({ data: { id: r.id } });
-                    toast.success("Reminder dihapus");
-                    refresh();
-                    router.invalidate();
-                  }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="rounded-full text-destructive hover:text-destructive"
+                      aria-label={`Hapus reminder ${r.title}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Hapus reminder ini?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        “{r.title}” beserta jadwal dan lampirannya akan dihapus permanen. Riwayat
+                        pengiriman tetap tersimpan.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Batal</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        onClick={() => deleteMutation.mutate(r.id)}
+                      >
+                        Hapus
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
+
             </CardContent>
           </Card>
         ))}
