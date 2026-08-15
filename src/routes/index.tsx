@@ -89,6 +89,29 @@ function Dashboard() {
     qc.invalidateQueries({ queryKey: ["dashboard"] });
   };
 
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+
+  const toggleMutation = useMutation({
+    mutationFn: (v: { id: string; enabled: boolean; title: string }) =>
+      toggle({ data: { id: v.id, enabled: v.enabled } }).then(() => v),
+    onSuccess: (v) => {
+      toast.success(v.enabled ? `“${v.title}” dilanjutkan` : `“${v.title}” dijeda`);
+      refresh();
+    },
+    onError: (e: Error) => toast.error(e.message),
+    onSettled: () => setTogglingId(null),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => destroy({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Reminder dihapus");
+      refresh();
+      router.invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const sendMutation = useMutation({
     mutationFn: (id: string) => sendNow({ data: { id } }),
     onSuccess: (res) => {
@@ -99,6 +122,7 @@ function Dashboard() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   return (
     <AppShell>
