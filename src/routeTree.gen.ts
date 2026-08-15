@@ -10,12 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SmtpRouteImport } from './routes/smtp'
 import { Route as RemindersIdRouteImport } from './routes/reminders/$id'
 import { Route as RemindersNewRouteImport } from './routes/reminders/new'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SmtpRoute = SmtpRouteImport.update({
+  id: '/smtp',
+  path: '/smtp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RemindersIdRoute = RemindersIdRouteImport.update({
@@ -31,30 +37,34 @@ const RemindersNewRoute = RemindersNewRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/smtp': typeof SmtpRoute
   '/reminders/$id': typeof RemindersIdRoute
   '/reminders/new': typeof RemindersNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/smtp': typeof SmtpRoute
   '/reminders/$id': typeof RemindersIdRoute
   '/reminders/new': typeof RemindersNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/smtp': typeof SmtpRoute
   '/reminders/$id': typeof RemindersIdRoute
   '/reminders/new': typeof RemindersNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/reminders/$id' | '/reminders/new'
+  fullPaths: '/' | '/smtp' | '/reminders/$id' | '/reminders/new'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/reminders/$id' | '/reminders/new'
-  id: '__root__' | '/' | '/reminders/$id' | '/reminders/new'
+  to: '/' | '/smtp' | '/reminders/$id' | '/reminders/new'
+  id: '__root__' | '/' | '/smtp' | '/reminders/$id' | '/reminders/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SmtpRoute: typeof SmtpRoute
   RemindersIdRoute: typeof RemindersIdRoute
   RemindersNewRoute: typeof RemindersNewRoute
 }
@@ -66,6 +76,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/smtp': {
+      id: '/smtp'
+      path: '/smtp'
+      fullPath: '/smtp'
+      preLoaderRoute: typeof SmtpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reminders/$id': {
@@ -87,6 +104,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SmtpRoute: SmtpRoute,
   RemindersIdRoute: RemindersIdRoute,
   RemindersNewRoute: RemindersNewRoute,
 }
