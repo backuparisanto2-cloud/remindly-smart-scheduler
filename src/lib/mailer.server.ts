@@ -28,12 +28,12 @@ export function zonedToUtc(dateStr: string, timeStr: string, timeZone: string): 
   });
   const parts = Object.fromEntries(fmt.formatToParts(new Date(asUtc)).map((p) => [p.type, p.value]));
   const local = Date.UTC(
-    Number(parts.year),
-    Number(parts.month) - 1,
-    Number(parts.day),
-    Number(parts.hour) % 24,
-    Number(parts.minute),
-    Number(parts.second),
+    Number(parts["year"]),
+    Number(parts["month"]) - 1,
+    Number(parts["day"]),
+    Number(parts["hour"]) % 24,
+    Number(parts["minute"]),
+    Number(parts["second"]),
   );
   return new Date(asUtc - (local - asUtc));
 }
