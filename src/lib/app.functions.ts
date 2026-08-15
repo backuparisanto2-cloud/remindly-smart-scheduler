@@ -1,150 +1,266 @@
-import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
+/**
+ * Data layer for the static (SPA) build.
+ *
+ * All reads/writes go straight from the browser to Lovable Cloud using the
+ * signed-in admin session (RLS: authenticated only). Only SMTP delivery runs on
+ * the backend, because it needs raw TCP sockets — see src/lib/backend.ts.
+ */
+import { supabase } from "@/integrations/supabase/client";
+import { occurrencesFor, type ScheduleRow } from "./schedule";
+import { callBackend } from "./backend";
 
-const scheduleSchema = z.object({
-  kind: z.enum(["single", "range"]),
-  start_date: z.string().nullable(),
-  end_date: z.string().nullable(),
-  send_time: z.string(),
-  weekdays: z.array(z.number()),
-});
+/** Identity helper so page components keep the same call style as before. */
+export function useServerFn<T extends (...args: never[]) => unknown>(fn: T): T {
+  return fn;
+}
 
-const reminderSchema = z.object({
-  id: z.string().nullable().optional(),
-  title: z.string().trim().min(1).max(120),
-  to_emails: z.array(z.string().email()).min(1).max(50),
-  cc_emails: z.array(z.string().email()).max(50),
-  bcc_emails: z.array(z.string().email()).max(50),
-  subject: z.string().trim().min(1).max(200),
-  body: z.string().max(20000),
-  smtp_profile_id: z.string().uuid().nullable(),
-  enabled: z.boolean(),
-  timezone: z.string().max(60),
-  schedules: z.array(scheduleSchema).max(50),
-});
+export type SmtpInput = {
+  id?: string | null | undefined;
+  name: string;
+  host: string;
+  port: number;
+  tls: boolean;
+  from_email: string;
+  from_name?: string | null | undefined;
+  username: string;
+  password?: string | null | undefined;
+  verify_cert: boolean;
+};
 
-const smtpSchema = z.object({
-  id: z.string().uuid().nullable().optional(),
-  name: z.string().trim().min(1).max(80),
-  host: z.string().trim().min(1).max(200),
-  port: z.number().int().min(1).max(65535),
-  tls: z.boolean(),
-  from_email: z.string().email(),
-  from_name: z.string().max(120).nullable().optional(),
-  username: z.string().max(200),
-  password: z.string().max(400).nullable().optional(),
-  verify_cert: z.boolean(),
-});
+export type ReminderInput = {
+  id?: string | null | undefined;
+  title: string;
+  to_emails: string[];
+  cc_emails: string[];
+  bcc_emails: string[];
+  subject: string;
+  body: string;
+  smtp_profile_id: string | null;
+  enabled: boolean;
+  timezone: string;
+  schedules: {
+    kind: "single" | "range";
+    start_date: string | null;
+    end_date: string | null;
+    send_time: string;
+    weekdays: number[];
+  }[];
+};
 
-export const fetchReminders = createServerFn({ method: "GET" }).handler(async () => {
-  const { listReminders } = await import("./data.server");
-  return listReminders();
-});
+const SMTP_PUBLIC_COLUMNS =
+  "id, name, host, port, tls, from_email, from_name, username, verify_cert, last_status, last_tested_at, created_at";
 
-export const fetchDashboard = createServerFn({ method: "GET" }).handler(async () => {
-  const { dashboardStats } = await import("./data.server");
-  return dashboardStats();
-});
+function unwrap<T>(res: { data: T; error: { message: string } | null }): T {
+  if (res.error) throw new Error(res.error.message);
+  return res.data;
+}
 
-export const fetchReminder = createServerFn({ method: "GET" })
-  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
-    const { getReminder } = await import("./data.server");
-    return getReminder(data.id);
+export async function fetchReminders() {
+  const data = unwrap(
+    await supabase
+      .from("reminders")
+      .select("*, reminder_schedules(*), reminder_attachments(id, filename), smtp_profiles(name)")
+      .order("created_at", { ascending: false }),
+  );
+
+  const now = Date.now();
+  return (data ?? []).map((reminder) => {
+    const schedules = (reminder.reminder_schedules ?? []) as ScheduleRow[];
+    const upcoming = occurrencesFor(schedules, reminder.timezone ?? "Asia/Jakarta").find(
+      (d) => d.getTime() > now,
+    );
+    return {
+      ...reminder,
+      next_run: upcoming ? upcoming.toISOString() : null,
+      schedule_count: schedules.length,
+      attachment_count: (reminder.reminder_attachments ?? []).length,
+      smtp_name: (reminder.smtp_profiles as { name: string } | null)?.name ?? null,
+    };
   });
+}
 
-export const upsertReminder = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => reminderSchema.parse(d))
-  .handler(async ({ data }) => {
-    const { saveReminder } = await import("./data.server");
-    return saveReminder(data);
-  });
+export async function fetchLogs(limit = 200) {
+  return (
+    unwrap(
+      await supabase
+        .from("send_logs")
+        .select("*")
+        .order("sent_at", { ascending: false })
+        .limit(limit),
+    ) ?? []
+  );
+}
 
-export const removeReminder = createServerFn({ method: "POST" })
-  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
-    const { deleteReminder } = await import("./data.server");
-    return deleteReminder(data.id);
-  });
+export async function fetchDashboard() {
+  const reminders = await fetchReminders();
+  const logs = await fetchLogs(50);
+  return {
+    total: reminders.length,
+    active: reminders.filter((r) => r.enabled).length,
+    nextRun:
+      reminders
+        .map((r) => r.next_run)
+        .filter(Boolean)
+        .sort()[0] ?? null,
+    successCount: logs.filter((l) => l.status === "success").length,
+    failedCount: logs.filter((l) => l.status === "failed").length,
+  };
+}
 
-export const setReminderEnabled = createServerFn({ method: "POST" })
-  .inputValidator((d: { id: string; enabled: boolean }) =>
-    z.object({ id: z.string().uuid(), enabled: z.boolean() }).parse(d),
-  )
-  .handler(async ({ data }) => {
-    const { toggleReminder } = await import("./data.server");
-    return toggleReminder(data.id, data.enabled);
-  });
+export async function fetchReminder({ data }: { data: { id: string } }) {
+  return unwrap(
+    await supabase
+      .from("reminders")
+      .select("*, reminder_schedules(*), reminder_attachments(*)")
+      .eq("id", data.id)
+      .maybeSingle(),
+  );
+}
 
-export const sendReminderNow = createServerFn({ method: "POST" })
-  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
-    const { sendReminder } = await import("./mailer.server");
-    return sendReminder(data.id, { source: "manual" });
-  });
+export async function upsertReminder({ data: input }: { data: ReminderInput }) {
+  const payload = {
+    title: input.title,
+    to_emails: input.to_emails,
+    cc_emails: input.cc_emails,
+    bcc_emails: input.bcc_emails,
+    subject: input.subject,
+    body: input.body,
+    smtp_profile_id: input.smtp_profile_id,
+    enabled: input.enabled,
+    timezone: input.timezone,
+  };
 
-export const fetchSmtpProfiles = createServerFn({ method: "GET" }).handler(async () => {
-  const { listSmtpProfiles } = await import("./data.server");
-  return listSmtpProfiles();
-});
+  let reminderId = input.id ?? null;
+  if (reminderId) {
+    unwrap(await supabase.from("reminders").update(payload).eq("id", reminderId).select("id"));
+  } else {
+    const row = unwrap(await supabase.from("reminders").insert(payload).select("id").single());
+    reminderId = row.id;
+  }
 
-export const upsertSmtpProfile = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => smtpSchema.parse(d))
-  .handler(async ({ data }) => {
-    const { saveSmtpProfile } = await import("./data.server");
-    return saveSmtpProfile(data);
-  });
+  unwrap(await supabase.from("reminder_schedules").delete().eq("reminder_id", reminderId!).select("id"));
+  if (input.schedules.length) {
+    unwrap(
+      await supabase
+        .from("reminder_schedules")
+        .insert(
+          input.schedules.map((s) => ({
+            reminder_id: reminderId!,
+            kind: s.kind,
+            start_date: s.start_date,
+            end_date: s.kind === "range" ? s.end_date : null,
+            send_time: s.send_time,
+            weekdays: s.weekdays,
+          })),
+        )
+        .select("id"),
+    );
+  }
+  return { id: reminderId! };
+}
 
-export const removeSmtpProfile = createServerFn({ method: "POST" })
-  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
-    const { deleteSmtpProfile } = await import("./data.server");
-    return deleteSmtpProfile(data.id);
-  });
+export async function removeReminder({ data }: { data: { id: string } }) {
+  const files = unwrap(
+    await supabase.from("reminder_attachments").select("path").eq("reminder_id", data.id),
+  );
+  if (files?.length) {
+    await supabase.storage.from("attachments").remove(files.map((f) => f.path));
+  }
+  unwrap(await supabase.from("reminders").delete().eq("id", data.id).select("id"));
+  return { ok: true };
+}
 
-export const testSmtpProfile = createServerFn({ method: "POST" })
-  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
-    const { runSmtpTest } = await import("./mailer.server");
-    return { status: await runSmtpTest(data.id) };
-  });
+export async function setReminderEnabled({ data }: { data: { id: string; enabled: boolean } }) {
+  unwrap(
+    await supabase.from("reminders").update({ enabled: data.enabled }).eq("id", data.id).select("id"),
+  );
+  return { ok: true };
+}
 
-export const requestUploadTicket = createServerFn({ method: "POST" })
-  .inputValidator((d: { reminderId: string; filename: string }) =>
-    z
-      .object({ reminderId: z.string().uuid(), filename: z.string().min(1).max(200) })
-      .parse(d),
-  )
-  .handler(async ({ data }) => {
-    const { createUploadTicket } = await import("./data.server");
-    return createUploadTicket(data.reminderId, data.filename);
-  });
+export async function fetchSmtpProfiles() {
+  return (
+    unwrap(
+      await supabase
+        .from("smtp_profiles")
+        .select(SMTP_PUBLIC_COLUMNS)
+        .order("created_at", { ascending: true }),
+    ) ?? []
+  );
+}
 
-export const saveAttachment = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
-    z
-      .object({
-        reminder_id: z.string().uuid(),
-        path: z.string().min(1),
-        filename: z.string().min(1).max(200),
-        size_bytes: z.number().int().min(0).max(25 * 1024 * 1024),
-        mime_type: z.string().max(150),
-      })
-      .parse(d),
-  )
-  .handler(async ({ data }) => {
-    const { registerAttachment } = await import("./data.server");
-    return registerAttachment(data);
-  });
+export async function upsertSmtpProfile({ data: input }: { data: SmtpInput }) {
+  const payload = {
+    name: input.name,
+    host: input.host,
+    port: input.port,
+    tls: input.tls,
+    from_email: input.from_email,
+    from_name: input.from_name ?? null,
+    username: input.username,
+    verify_cert: input.verify_cert,
+    ...(input.password ? { password: input.password } : {}),
+  };
 
-export const deleteAttachment = createServerFn({ method: "POST" })
-  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
-    const { removeAttachment } = await import("./data.server");
-    return removeAttachment(data.id);
-  });
+  if (input.id) {
+    unwrap(await supabase.from("smtp_profiles").update(payload).eq("id", input.id).select("id"));
+    return { id: input.id };
+  }
+  const row = unwrap(
+    await supabase
+      .from("smtp_profiles")
+      .insert({ ...payload, password: input.password ?? "" })
+      .select("id")
+      .single(),
+  );
+  return { id: row.id };
+}
 
-export const fetchLogs = createServerFn({ method: "GET" }).handler(async () => {
-  const { listLogs } = await import("./data.server");
-  return listLogs(200);
-});
+export async function removeSmtpProfile({ data }: { data: { id: string } }) {
+  unwrap(await supabase.from("smtp_profiles").delete().eq("id", data.id).select("id"));
+  return { ok: true };
+}
+
+export async function requestUploadTicket({
+  data,
+}: {
+  data: { reminderId: string; filename: string };
+}) {
+  const safe = data.filename.replace(/[^\w.\- ]+/g, "_");
+  const path = `${data.reminderId}/${crypto.randomUUID()}-${safe}`;
+  const res = await supabase.storage.from("attachments").createSignedUploadUrl(path);
+  if (res.error) throw new Error(res.error.message);
+  return { path, token: res.data.token };
+}
+
+export async function saveAttachment({
+  data,
+}: {
+  data: {
+    reminder_id: string;
+    path: string;
+    filename: string;
+    size_bytes: number;
+    mime_type: string;
+  };
+}) {
+  return unwrap(await supabase.from("reminder_attachments").insert(data).select("*").single());
+}
+
+export async function deleteAttachment({ data }: { data: { id: string } }) {
+  const row = unwrap(
+    await supabase.from("reminder_attachments").select("path").eq("id", data.id).maybeSingle(),
+  );
+  if (row?.path) await supabase.storage.from("attachments").remove([row.path]);
+  unwrap(await supabase.from("reminder_attachments").delete().eq("id", data.id).select("id"));
+  return { ok: true };
+}
+
+/* ---- SMTP delivery (runs on the Lovable Cloud backend) ---- */
+
+export async function sendReminderNow({ data }: { data: { id: string } }) {
+  return callBackend<{ ok: boolean; error?: string }>("/api/public/mail/send", { id: data.id });
+}
+
+export async function testSmtpProfile({ data }: { data: { id: string } }) {
+  return callBackend<{ status: string }>("/api/public/mail/test", { id: data.id });
+}
