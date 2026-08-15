@@ -4,8 +4,11 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   CalendarClock,
   CheckCircle2,
+  Loader2,
   Paperclip,
+  Pause,
   Pencil,
+  Play,
   Plus,
   Send,
   Trash2,
@@ -16,8 +19,18 @@ import { AppShell } from "@/components/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   fetchDashboard,
   fetchReminders,
@@ -26,6 +39,7 @@ import {
   setReminderEnabled,
 } from "@/lib/app.functions";
 import { formatDateTime } from "@/lib/format";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
