@@ -184,7 +184,8 @@ async function openConnection(cfg: SmtpConfig): Promise<Conn> {
   const implicitTls = cfg.tls && cfg.port === 465;
   // Cloudflare Workers runtime
   try {
-    const mod = (await import(/* @vite-ignore */ "cloudflare:sockets")) as {
+    const cfSockets = "cloudflare:sockets";
+    const mod = (await import(/* @vite-ignore */ cfSockets)) as {
       connect: (addr: { hostname: string; port: number }, opts?: Record<string, unknown>) => never;
     };
     const socket = mod.connect(
