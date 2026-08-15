@@ -30,7 +30,29 @@ function EditReminder() {
   const load = useServerFn(fetchReminder);
   const query = useQuery({ queryKey: ["reminder", id], queryFn: () => load({ data: { id } }) });
 
-  const data = query.data as Record<string, any> | null | undefined;
+  type ScheduleRow = {
+    kind: "single" | "range";
+    start_date: string | null;
+    end_date: string | null;
+    send_time: string | null;
+    weekdays: number[] | null;
+  };
+  type AttachRow = { id: string; filename: string; size_bytes: number };
+  type ReminderRow = {
+    id: string;
+    title: string | null;
+    to_emails: string[] | null;
+    cc_emails: string[] | null;
+    bcc_emails: string[] | null;
+    subject: string | null;
+    body: string | null;
+    smtp_profile_id: string | null;
+    enabled: boolean | null;
+    timezone: string | null;
+    reminder_schedules?: ScheduleRow[];
+    reminder_attachments?: AttachRow[];
+  };
+  const data = query.data as ReminderRow | null | undefined;
 
   return (
     <AppShell>
@@ -61,14 +83,14 @@ function EditReminder() {
               smtp_profile_id: data.smtp_profile_id ?? null,
               enabled: !!data.enabled,
               timezone: data.timezone ?? "Asia/Jakarta",
-              schedules: (data.reminder_schedules ?? []).map((s: Record<string, any>) => ({
+              schedules: (data.reminder_schedules ?? []).map((s: ScheduleRow) => ({
                 kind: s.kind,
                 start_date: s.start_date ?? "",
                 end_date: s.end_date ?? "",
                 send_time: (s.send_time ?? "08:00:00").slice(0, 5),
                 weekdays: s.weekdays ?? [],
               })),
-              attachments: (data.reminder_attachments ?? []).map((a: Record<string, any>) => ({
+              attachments: (data.reminder_attachments ?? []).map((a: AttachRow) => ({
                 id: a.id,
                 filename: a.filename,
                 size_bytes: a.size_bytes,
