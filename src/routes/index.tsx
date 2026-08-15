@@ -166,9 +166,12 @@ function Dashboard() {
                 <p className="mt-1 text-xs">
                   <span className="text-muted-foreground">Berikutnya: </span>
                   <span className="font-medium">
-                    {r.next_run ? formatDateTime(r.next_run) : "tidak ada jadwal mendatang"}
+                    {r.next_run
+                      ? `${formatDateTime(r.next_run, r.timezone ?? undefined)} (${r.timezone ?? "Asia/Jakarta"})`
+                      : "tidak ada jadwal mendatang"}
                   </span>
                 </p>
+
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
