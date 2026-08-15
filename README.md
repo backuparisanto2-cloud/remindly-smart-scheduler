@@ -1,14 +1,18 @@
-# Welcome to your Lovable project
+# Elegant Reminder Hub
+
+Buat web responsive untuk di deploy di Web hosting data tetap di supabase ini web ini adalah web email reminder menggunakan SMTP dengan parameter sebagai berikut yang bisa diganti ganti sesuai dengan reminder nya, date periode bisa di tentukan dan bisa multi date periode, bisa attachment juga dan bisa tentukan datetime web putih hijau elegant eksluaive
 
 This project was built with [Lovable](https://lovable.dev).
 
+**Live app**: https://remindly-smart-scheduler.lovable.app
+
 ## Build with Lovable
 
-Open your project in the [Lovable editor](https://lovable.dev) and keep building.
+Continue developing this project in the [Lovable editor](https://lovable.dev/projects/ef9d6f2e-51b3-481f-967d-1ddf14261d67).
 
 - **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: connect the project to GitHub and every change made in Lovable is committed straight to your repository.
-- **Full ownership**: this code is yours. Push to your repository and your changes sync back into Lovable, ready for your next prompt.
+- **Stay in sync**: every change made in Lovable is committed straight to this repository.
+- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
 
 ## Development
 
@@ -20,10 +24,3 @@ cd <repository-name>
 npm i
 npm run dev
 ```
-
-## Built with
-
-- TanStack Start
-- TypeScript
-- React
-- Tailwind CSS
