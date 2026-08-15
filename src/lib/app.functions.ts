@@ -135,7 +135,7 @@ export async function upsertReminder({ data: input }: { data: ReminderInput }) {
     unwrap(await supabase.from("reminders").update(payload).eq("id", reminderId).select("id"));
   } else {
     const row = unwrap(await supabase.from("reminders").insert(payload).select("id").single());
-    reminderId = row.id;
+    reminderId = row!.id;
   }
 
   unwrap(await supabase.from("reminder_schedules").delete().eq("reminder_id", reminderId!).select("id"));
@@ -212,7 +212,7 @@ export async function upsertSmtpProfile({ data: input }: { data: SmtpInput }) {
       .select("id")
       .single(),
   );
-  return { id: row.id };
+  return { id: row!.id };
 }
 
 export async function removeSmtpProfile({ data }: { data: { id: string } }) {
