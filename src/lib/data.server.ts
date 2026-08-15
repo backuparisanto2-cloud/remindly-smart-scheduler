@@ -47,7 +47,7 @@ export async function listSmtpProfiles() {
 }
 
 export async function saveSmtpProfile(input: SmtpInput) {
-  const payload: Record<string, unknown> = {
+  const payload = {
     name: input.name,
     host: input.host,
     port: input.port,
@@ -56,8 +56,8 @@ export async function saveSmtpProfile(input: SmtpInput) {
     from_name: input.from_name ?? null,
     username: input.username,
     verify_cert: input.verify_cert,
+    ...(input.password ? { password: input.password } : {}),
   };
-  if (input.password) payload["password"] = input.password;
 
   if (input.id) {
     const { error } = await supabaseAdmin.from("smtp_profiles").update(payload).eq("id", input.id);
