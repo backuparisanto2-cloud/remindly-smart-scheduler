@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
@@ -26,7 +26,13 @@ import {
   saveAttachment,
   upsertReminder,
 } from "@/lib/app.functions";
-import { formatBytes, WEEKDAYS } from "@/lib/format";
+import {
+  deviceTimezone,
+  formatBytes,
+  timezoneLabel,
+  TIMEZONES,
+  WEEKDAYS,
+} from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 type ScheduleDraft = {
@@ -86,6 +92,13 @@ const splitEmails = (value: string) =>
 export function ReminderForm({ initial }: { initial: ReminderFormValues }) {
   const navigate = useNavigate();
   const [form, setForm] = useState<ReminderFormValues>(initial);
+  const tzOptions = useMemo(() => {
+    const list = [...TIMEZONES];
+    for (const tz of [deviceTimezone(), initial.timezone]) {
+      if (tz && !list.some((t) => t.value === tz)) list.unshift({ value: tz, label: tz });
+    }
+    return list;
+  }, [initial.timezone]);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
