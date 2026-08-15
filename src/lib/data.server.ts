@@ -2,7 +2,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { occurrencesFor, type ScheduleRow } from "./mailer.server";
 
 export type SmtpInput = {
-  id?: string | null;
+  id?: string | null | undefined;
   name: string;
   host: string;
   port: number;
@@ -15,7 +15,7 @@ export type SmtpInput = {
 };
 
 export type ReminderInput = {
-  id?: string | null;
+  id?: string | null | undefined;
   title: string;
   to_emails: string[];
   cc_emails: string[];
