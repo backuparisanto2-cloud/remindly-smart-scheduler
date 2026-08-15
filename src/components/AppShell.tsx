@@ -1,7 +1,9 @@
-import { Link, useRouterState } from "@tanstack/react-router";
-import { CalendarClock, History, Mail, Server } from "lucide-react";
-import type { ReactNode } from "react";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { CalendarClock, History, LogOut, Mail, Server } from "lucide-react";
+import { useEffect, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { signOut, useSession } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
 
 const NAV = [
   { to: "/", label: "Dasbor", icon: CalendarClock },
@@ -11,6 +13,21 @@ const NAV = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
+  const { session, ready } = useSession();
+
+  useEffect(() => {
+    if (ready && !session) void navigate({ to: "/auth" });
+  }, [ready, session, navigate]);
+
+  if (!ready || !session) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
+        Memuat…
+      </div>
+    );
+  }
+
 
   return (
     <div className="min-h-screen">
@@ -53,7 +70,21 @@ export function AppShell({ children }: { children: ReactNode }) {
               );
             })}
           </nav>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="col-span-2 justify-self-end text-muted-foreground sm:col-auto"
+            onClick={async () => {
+              await signOut();
+              void navigate({ to: "/auth" });
+            }}
+          >
+            <LogOut className="h-4 w-4" />
+            <span className="hidden sm:inline">Keluar</span>
+          </Button>
         </div>
+
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">{children}</main>

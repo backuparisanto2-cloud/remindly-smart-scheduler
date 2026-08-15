@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
+import { useServerFn } from "@/lib/app.functions";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarRange, Loader2, Paperclip, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -190,7 +190,7 @@ export function ReminderForm({ initial }: { initial: ReminderFormValues }) {
         ...f,
         attachments: [
           ...f.attachments,
-          { id: row.id, filename: row.filename, size_bytes: row.size_bytes },
+          { id: row!.id, filename: row!.filename, size_bytes: row!.size_bytes },
         ],
       }));
       toast.success("Lampiran diunggah");
