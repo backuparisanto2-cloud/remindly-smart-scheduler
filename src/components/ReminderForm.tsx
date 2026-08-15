@@ -190,7 +190,7 @@ export function ReminderForm({ initial }: { initial: ReminderFormValues }) {
         ...f,
         attachments: [
           ...f.attachments,
-          { id: row.id, filename: row.filename, size_bytes: row.size_bytes },
+          { id: row!.id, filename: row!.filename, size_bytes: row!.size_bytes },
         ],
       }));
       toast.success("Lampiran diunggah");
