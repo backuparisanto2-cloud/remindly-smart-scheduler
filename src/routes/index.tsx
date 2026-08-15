@@ -1,11 +1,15 @@
+import { useState } from "react";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   CalendarClock,
   CheckCircle2,
+  Loader2,
   Paperclip,
+  Pause,
   Pencil,
+  Play,
   Plus,
   Send,
   Trash2,
@@ -16,8 +20,18 @@ import { AppShell } from "@/components/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   fetchDashboard,
   fetchReminders,
@@ -26,6 +40,7 @@ import {
   setReminderEnabled,
 } from "@/lib/app.functions";
 import { formatDateTime } from "@/lib/format";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -75,6 +90,29 @@ function Dashboard() {
     qc.invalidateQueries({ queryKey: ["dashboard"] });
   };
 
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+
+  const toggleMutation = useMutation({
+    mutationFn: (v: { id: string; enabled: boolean; title: string }) =>
+      toggle({ data: { id: v.id, enabled: v.enabled } }).then(() => v),
+    onSuccess: (v) => {
+      toast.success(v.enabled ? `“${v.title}” dilanjutkan` : `“${v.title}” dijeda`);
+      refresh();
+    },
+    onError: (e: Error) => toast.error(e.message),
+    onSettled: () => setTogglingId(null),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => destroy({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Reminder dihapus");
+      refresh();
+      router.invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const sendMutation = useMutation({
     mutationFn: (id: string) => sendNow({ data: { id } }),
     onSuccess: (res) => {
@@ -85,6 +123,7 @@ function Dashboard() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   return (
     <AppShell>
@@ -175,14 +214,25 @@ function Dashboard() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <Switch
-                  checked={r.enabled}
-                  onCheckedChange={async (checked) => {
-                    await toggle({ data: { id: r.id, enabled: checked } });
-                    refresh();
+                <Button
+                  size="sm"
+                  variant={r.enabled ? "outline" : "default"}
+                  className="rounded-full"
+                  disabled={toggleMutation.isPending && togglingId === r.id}
+                  onClick={() => {
+                    setTogglingId(r.id);
+                    toggleMutation.mutate({ id: r.id, enabled: !r.enabled, title: r.title });
                   }}
-                  aria-label="Aktifkan reminder"
-                />
+                >
+                  {toggleMutation.isPending && togglingId === r.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : r.enabled ? (
+                    <Pause className="h-4 w-4" />
+                  ) : (
+                    <Play className="h-4 w-4" />
+                  )}
+                  {r.enabled ? "Jeda" : "Lanjutkan"}
+                </Button>
                 <Button
                   size="sm"
                   variant="secondary"
@@ -197,21 +247,38 @@ function Dashboard() {
                     <Pencil className="h-4 w-4" /> Edit
                   </Link>
                 </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="rounded-full text-destructive hover:text-destructive"
-                  onClick={async () => {
-                    if (!confirm(`Hapus reminder "${r.title}"?`)) return;
-                    await destroy({ data: { id: r.id } });
-                    toast.success("Reminder dihapus");
-                    refresh();
-                    router.invalidate();
-                  }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="rounded-full text-destructive hover:text-destructive"
+                      aria-label={`Hapus reminder ${r.title}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Hapus reminder ini?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        “{r.title}” beserta jadwal dan lampirannya akan dihapus permanen. Riwayat
+                        pengiriman tetap tersimpan.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Batal</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        onClick={() => deleteMutation.mutate(r.id)}
+                      >
+                        Hapus
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
+
             </CardContent>
           </Card>
         ))}
