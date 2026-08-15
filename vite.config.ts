@@ -11,5 +11,8 @@ export default defineConfig({
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
+    // SPA shell so the UI can also be hosted as plain static files (cPanel).
+    spa: { enabled: true },
   },
 });
+
