@@ -14,6 +14,7 @@ import { Route as LogsRouteImport } from './routes/logs'
 import { Route as SmtpRouteImport } from './routes/smtp'
 import { Route as RemindersIdRouteImport } from './routes/reminders/$id'
 import { Route as RemindersNewRouteImport } from './routes/reminders/new'
+import { Route as ApiPublicBootstrapAdminRouteImport } from './routes/api/public/bootstrap-admin'
 import { Route as ApiPublicCronDispatchRouteImport } from './routes/api/public/cron/dispatch'
 
 const IndexRoute = IndexRouteImport.update({
@@ -41,6 +42,11 @@ const RemindersNewRoute = RemindersNewRouteImport.update({
   path: '/reminders/new',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicBootstrapAdminRoute = ApiPublicBootstrapAdminRouteImport.update({
+  id: '/api/public/bootstrap-admin',
+  path: '/api/public/bootstrap-admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicCronDispatchRoute = ApiPublicCronDispatchRouteImport.update({
   id: '/api/public/cron/dispatch',
   path: '/api/public/cron/dispatch',
@@ -53,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/smtp': typeof SmtpRoute
   '/reminders/$id': typeof RemindersIdRoute
   '/reminders/new': typeof RemindersNewRoute
+  '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
   '/api/public/cron/dispatch': typeof ApiPublicCronDispatchRoute
 }
 export interface FileRoutesByTo {
@@ -61,6 +68,7 @@ export interface FileRoutesByTo {
   '/smtp': typeof SmtpRoute
   '/reminders/$id': typeof RemindersIdRoute
   '/reminders/new': typeof RemindersNewRoute
+  '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
   '/api/public/cron/dispatch': typeof ApiPublicCronDispatchRoute
 }
 export interface FileRoutesById {
@@ -70,6 +78,7 @@ export interface FileRoutesById {
   '/smtp': typeof SmtpRoute
   '/reminders/$id': typeof RemindersIdRoute
   '/reminders/new': typeof RemindersNewRoute
+  '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
   '/api/public/cron/dispatch': typeof ApiPublicCronDispatchRoute
 }
 export interface FileRouteTypes {
@@ -80,6 +89,7 @@ export interface FileRouteTypes {
     | '/smtp'
     | '/reminders/$id'
     | '/reminders/new'
+    | '/api/public/bootstrap-admin'
     | '/api/public/cron/dispatch'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -88,6 +98,7 @@ export interface FileRouteTypes {
     | '/smtp'
     | '/reminders/$id'
     | '/reminders/new'
+    | '/api/public/bootstrap-admin'
     | '/api/public/cron/dispatch'
   id:
     | '__root__'
@@ -96,6 +107,7 @@ export interface FileRouteTypes {
     | '/smtp'
     | '/reminders/$id'
     | '/reminders/new'
+    | '/api/public/bootstrap-admin'
     | '/api/public/cron/dispatch'
   fileRoutesById: FileRoutesById
 }
@@ -105,6 +117,7 @@ export interface RootRouteChildren {
   SmtpRoute: typeof SmtpRoute
   RemindersIdRoute: typeof RemindersIdRoute
   RemindersNewRoute: typeof RemindersNewRoute
+  ApiPublicBootstrapAdminRoute: typeof ApiPublicBootstrapAdminRoute
   ApiPublicCronDispatchRoute: typeof ApiPublicCronDispatchRoute
 }
 
@@ -145,6 +158,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RemindersNewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/bootstrap-admin': {
+      id: '/api/public/bootstrap-admin'
+      path: '/api/public/bootstrap-admin'
+      fullPath: '/api/public/bootstrap-admin'
+      preLoaderRoute: typeof ApiPublicBootstrapAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/dispatch': {
       id: '/api/public/cron/dispatch'
       path: '/api/public/cron/dispatch'
@@ -161,6 +181,7 @@ const rootRouteChildren: RootRouteChildren = {
   SmtpRoute: SmtpRoute,
   RemindersIdRoute: RemindersIdRoute,
   RemindersNewRoute: RemindersNewRoute,
+  ApiPublicBootstrapAdminRoute: ApiPublicBootstrapAdminRoute,
   ApiPublicCronDispatchRoute: ApiPublicCronDispatchRoute,
 }
 export const routeTree = rootRouteImport
