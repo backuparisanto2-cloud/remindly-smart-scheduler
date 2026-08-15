@@ -70,7 +70,21 @@ export function AppShell({ children }: { children: ReactNode }) {
               );
             })}
           </nav>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="col-span-2 justify-self-end text-muted-foreground sm:col-auto"
+            onClick={async () => {
+              await signOut();
+              void navigate({ to: "/auth" });
+            }}
+          >
+            <LogOut className="h-4 w-4" />
+            <span className="hidden sm:inline">Keluar</span>
+          </Button>
         </div>
+
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">{children}</main>
